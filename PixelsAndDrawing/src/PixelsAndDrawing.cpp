@@ -3,9 +3,12 @@
 #include <Utils.h>
 #include <fstream>
 #include <vector>
+#include <iomanip>
 
 #define WIDTH 320
 #define HEIGHT 240
+
+using namespace std;
 
 void draw(DrawingWindow &window) {
 	window.clearPixels();
@@ -32,9 +35,28 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 	}
 }
 
+vector<float> interpolateSingleFloats(float from, float to, size_t numberOfValues){
+	vector<float> result;
+	float increment = (to - from)/(numberOfValues-1);
+	
+	for(size_t i = 0; i < numberOfValues; i++){
+		result.push_back(from);
+		from += increment;
+	}
+
+	return result;
+}
+
 int main(int argc, char *argv[]) {
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 	SDL_Event event;
+	vector<float> result;
+	result = interpolateSingleFloats(2.2, 8.5, 7);
+	
+	for(size_t i = 0; i < result.size(); i++)
+		cout << setprecision(3) << result[i] << " ";
+	cout << endl;
+	//cout << "\n\nTHIS IS A TEST\n\n";
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
