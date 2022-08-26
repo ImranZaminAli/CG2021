@@ -24,7 +24,7 @@ vector<float> interpolateSingleFloats(float from, float to, size_t numberOfValue
 	return result;
 }
 
-vector<glm::vec3> interpolateThreeElementValues(vector<float> from, vector<float> to, size_t numberOfValues){ // todo run, test and debug this function
+vector<glm::vec3> interpolateThreeElementValues(glm::vec3 from, glm::vec3 to, size_t numberOfValues){ // todo run, test and debug this function
 	vector<glm::vec3> result;
 	for(int i = 0; i < numberOfValues; i++){
 		glm::vec3 v = glm::vec3(0,0,0);
@@ -42,25 +42,52 @@ vector<glm::vec3> interpolateThreeElementValues(vector<float> from, vector<float
 	return result;
 }
 
-void draw(DrawingWindow &window) {
-	window.clearPixels();
-	vector<float> shades;
-	const int gradient = 100;
-	shades = interpolateSingleFloats(0, 255, gradient);
-	reverse(shades.begin(), shades.end());
-	vector<float> xCoords;
-	xCoords = interpolateSingleFloats(0, WIDTH, gradient);
+
+// write a line of pixels to the window
+void writeLine(DrawingWindow &window, vector<glm::vec3>* shades, int x, int y, size_t numberOfValues, bool vertical){
+	vector<float> coords = interpolateSingleFloats(0, (vertical? HEIGHT : WIDTH), numberOfValues);
 	int index = 1;
-	for (size_t x = 0; x < window.width; x++) {
-		float value = int(shades[index]);
-		uint32_t colour = (255 << 24) + (int(value) << 16) + (int(value) << 8) + int(value); 
-		for (size_t y = 0; y < window.height; y++) {
-			window.setPixelColour(x, y, colour);
-		}
-		
-		if(x > xCoords[index]) index++;
+	
+	int end = (vertical ? HEIGHT : WIDTH);
+	for(size_t i = 0; i < end; i++){
+		glm::vec3 value;
+		value = (*shades)[index-1];
+		uint32_t colour = (255 << 24) + (int(value[0]) << 16) + (int(value[1]) << 8) + int(value[2]);
+		if (vertical) window.setPixelColour(x, i, colour);
+		else window.setPixelColour(i, y, colour);
 			
 		
+		if(i > coords[index]) index++;
+	}
+}
+
+void makeBorders(DrawingWindow &window, glm::vec3 topLeft, glm::vec3 topRight, glm::vec3 botLeft, glm::vec3 botRight, vector<glm::vec3>* rightBorder, vector<glm::vec3>* leftBorder, size_t numberOfValues){
+	*rightBorder = interpolateThreeElementValues(topRight, botRight, numberOfValues);
+	writeLine(window, rightBorder, window.width -1, 0, numberOfValues, true);
+	*leftBorder = interpolateThreeElementValues(topLeft, botLeft, numberOfValues);
+	writeLine(window, leftBorder, 0,0, numberOfValues, true);
+	
+	
+}
+
+void draw(DrawingWindow &window){
+	window.clearPixels();
+	glm::vec3 topLeft, topRight, botLeft, botRight;
+	topLeft = glm::vec3(255,0,0);
+	topRight = glm::vec3(0,0,255);
+	botLeft = glm::vec3(255,255,0);
+	botRight = glm::vec3(0,255,0);
+	const size_t numberOfValues = 100;
+	
+	vector<glm::vec3> rightBorder, leftBorder;
+	makeBorders(window, topLeft, topRight, botLeft, botRight, &rightBorder, &leftBorder, numberOfValues);
+	vector<float> coords = interpolateSingleFloats(0, window.height, numberOfValues);
+	int index = 1;
+	for(int i = 0; i < window.height; i++){
+		vector<glm::vec3> shades;
+		shades = interpolateThreeElementValues(leftBorder[index-1], rightBorder[index-1], numberOfValues);
+		writeLine(window, &shades, 0, i, numberOfValues, false);
+		if(i > coords[index]) index++;
 	}
 }
 
@@ -80,24 +107,13 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 int main(int argc, char *argv[]) {
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 	SDL_Event event;
-	vector<float> from, to;
-	from.push_back(1);
-	from.push_back(4);
-	from.push_back(9.2);
-	to.push_back(4);
-	to.push_back(1);
-	to.push_back(9.8);
-	size_t num = 4;
-	vector<glm::vec3> result = interpolateThreeElementValues(from, to, num);
-	for(int i = 0; i < num; i++){
-		for(int j = 0; j < 3; j++) cout << result[i][j] << " ";
-		cout << endl;
-	}
+	draw(window);
+	window.renderFrame();
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
-		draw(window);
+		//draw(window);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
-		window.renderFrame();
+		//window.renderFrame();
 	}
 }
