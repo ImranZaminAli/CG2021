@@ -5,6 +5,7 @@
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+#include <glm/glm.hpp>
 
 #define WIDTH 320
 #define HEIGHT 240
@@ -23,6 +24,24 @@ vector<float> interpolateSingleFloats(float from, float to, size_t numberOfValue
 	return result;
 }
 
+vector<glm::vec3> interpolateThreeElementValues(vector<float> from, vector<float> to, size_t numberOfValues){ // todo run, test and debug this function
+	vector<glm::vec3> result;
+	for(int i = 0; i < numberOfValues; i++){
+		glm::vec3 v = glm::vec3(0,0,0);
+		result.push_back(v);
+	}
+	
+	for(int i = 0; i < 3; i++){
+		vector<float> temp;
+		temp = interpolateSingleFloats(from[i], to[i], numberOfValues);
+		for(int j = 0; j < temp.size(); j++){
+			result[j][i] = temp[j];
+		}
+	}
+	
+	return result;
+}
+
 void draw(DrawingWindow &window) {
 	window.clearPixels();
 	vector<float> shades;
@@ -32,17 +51,10 @@ void draw(DrawingWindow &window) {
 	vector<float> xCoords;
 	xCoords = interpolateSingleFloats(0, WIDTH, gradient);
 	int index = 1;
-	//for(int i = 0; i < shades.size(); i++) cout << shades[i] << " " << xCoords[i] << endl;
-	//cout << xCoords[index];
 	for (size_t x = 0; x < window.width; x++) {
 		float value = int(shades[index]);
 		uint32_t colour = (255 << 24) + (int(value) << 16) + (int(value) << 8) + int(value); 
-		//red = green = blue = shades[index];
 		for (size_t y = 0; y < window.height; y++) {
-			/*float red = rand() % 256;
-			float green = 0.0;
-			float blue = 0.0;
-			uint32_t colour = (255 << 24) + (int(red) << 16) + (int(green) << 8) + int(blue);*/
 			window.setPixelColour(x, y, colour);
 		}
 		
@@ -68,15 +80,19 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 int main(int argc, char *argv[]) {
 	DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 	SDL_Event event;
-	/*vector<float> result;
-	result = interpolateSingleFloats(2.2, 8.5, 7);
-	
-	for(size_t i = 0; i < result.size(); i++)
-		cout << setprecision(3) << result[i] << " ";
-	cout << endl;
-	//cout << "\n\nTHIS IS A TEST\n\n";*/
-	//draw(window);
-	//window.renderFrame();
+	vector<float> from, to;
+	from.push_back(1);
+	from.push_back(4);
+	from.push_back(9.2);
+	to.push_back(4);
+	to.push_back(1);
+	to.push_back(9.8);
+	size_t num = 4;
+	vector<glm::vec3> result = interpolateThreeElementValues(from, to, num);
+	for(int i = 0; i < num; i++){
+		for(int j = 0; j < 3; j++) cout << result[i][j] << " ";
+		cout << endl;
+	}
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
